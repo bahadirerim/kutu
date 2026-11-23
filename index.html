@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta property="og:title" content="Batuhan'ın Kutusu">
+<meta property="og:description" content="Kutuyu açınca devam eden küçük bir rehber.">
+<title>Batuhan'ın Kutusu</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: hikâye formatı. Tam ekran tek sütun: üstte ince ilerleme çizgileri, ortada 3B çakı, altta tek başlık ve tek satır, en altta Geri / Sıradaki. */
+:root {
+  --bg: #E7EBF0;
+  --surface: #F5F7FA;
+  --fg: #0E1A2E;
+  --muted: #51607A;
+  --line: #C5CDD8;
+  --accent: #1650C4;
+  --on-accent: #FFFFFF;
+  --gate: #1650C4;
+  --on-gate: #FFFFFF;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B111D; --surface: #131B2B; --fg: #E6EBF2; --muted: #94A2B8; --line: #27344A;
+    --accent: #6C9BFF; --on-accent: #081226;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B111D; --surface: #131B2B; --fg: #E6EBF2; --muted: #94A2B8; --line: #27344A;
+  --accent: #6C9BFF; --on-accent: #081226;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--body);
+  font-size: 1rem;
+  line-height: 1.45;
+  overflow: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.mono { font-family: var(--mono); font-size: .8125rem; letter-spacing: .04em; color: var(--muted); }
+
+/* Açılış ekranı */
+#gate {
+  position: fixed; inset: 0; z-index: 20;
+  background: var(--gate); color: var(--on-gate);
+  display: flex; flex-direction: column; justify-content: space-between; gap: 2rem;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 2.5rem);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem);
+  padding-left: max(24px, env(safe-area-inset-left, 0px));
+  padding-right: max(24px, env(safe-area-inset-right, 0px));
+}
+#gate h1 {
+  margin: 0; align-self: center; width: 100%; max-width: 34rem; margin-block: auto;
+  font-family: var(--display); font-stretch: 125%; font-weight: 800;
+  font-size: clamp(2.5rem, 12.5vw, 5rem); line-height: .98; letter-spacing: -.02em;
+}
+#gate h1 span { display: block; font-weight: 400; }
+#gate button {
+  align-self: center; width: 100%; max-width: 34rem;
+  background: var(--on-gate); color: var(--gate);
+  border: 0; border-radius: 4px; padding: 1.1rem 1.25rem;
+  font-family: var(--display); font-stretch: 112%; font-weight: 700; font-size: 1.125rem;
+  cursor: pointer;
+}
+#gate button:focus-visible { outline-color: var(--on-gate); }
+#gate .foot { align-self: center; width: 100%; max-width: 34rem; display: grid; gap: .75rem; }
+#gate-msg { margin: 0; font-weight: 500; }
+#gate-go { position: relative; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+#gate-go::before {
+  content: ""; position: absolute; inset: 0; background: var(--gate); opacity: .28;
+  transform: scaleX(0); transform-origin: left; transition: transform .2s linear;
+}
+#gate-go.hold::before { transform: scaleX(1); transition-duration: 2s; }
+#gate-go span { position: relative; }
+
+/* Hikâye */
+#story {
+  position: fixed; inset: 0; display: flex; justify-content: center;
+  padding-top: calc(env(safe-area-inset-top, 0px) + .75rem);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.col { width: 100%; max-width: 36rem; min-width: 0; display: flex; flex-direction: column; gap: .75rem; }
+.segs { display: flex; gap: 3px; }
+.segs i { flex: 1 1 0; height: 3px; background: var(--line); }
+.segs i.on { background: var(--fg); }
+.top { display: flex; justify-content: space-between; gap: 1rem; }
+#view { position: relative; flex: 1 1 0; min-height: 0; -webkit-tap-highlight-color: transparent; }
+#view canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; cursor: pointer; }
+#view .fail { position: absolute; inset: 0; display: grid; place-items: center; padding: 1.5rem; text-align: center; color: var(--muted); margin: 0; }
+#cap { min-height: 9.25rem; display: flex; flex-direction: column; justify-content: flex-end; }
+#cap .mono { min-height: 1.2em; margin-bottom: .25rem; }
+#cap .ok { color: var(--accent); }
+#cap h2 {
+  margin: 0 0 .375rem;
+  font-family: var(--display); font-stretch: 125%; font-weight: 800;
+  font-size: clamp(1.625rem, 7.5vw, 2.25rem); line-height: 1.04; letter-spacing: -.015em;
+  text-wrap: balance;
+}
+#cap p { margin: 0; max-width: 46ch; }
+.nav { display: grid; grid-template-columns: auto 1fr; gap: .75rem; }
+.nav button { min-height: 52px; border-radius: 4px; padding: .75rem 1.125rem; font-family: var(--display); font-stretch: 112%; font-weight: 700; cursor: pointer; }
+#prev { background: none; border: 1px solid var(--line); font-weight: 600; }
+#next { background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent); grid-column: 2; }
+#prev:disabled { visibility: hidden; }
+#next.wait { background: none; color: var(--muted); border-color: transparent; font-weight: 500; cursor: default; }
+</style>
+
+</head>
+<body style="margin:0">
+<section id="gate" aria-labelledby="gate-h">
+  <h1 id="gate-h"><span>Batuhan,</span>şimdi kutuyu aç.</h1>
+  <div class="foot">
+    <p id="gate-msg" aria-live="polite">Açınca düğmeyi basılı tut.</p>
+    <button type="button" id="gate-go"><span>Kutuyu açtım</span></button>
+  </div>
+</section>
+
+<main id="story" hidden>
+  <div class="col">
+    <div class="segs" id="segs" aria-hidden="true"></div>
+    <div class="top mono"><span>VICTORINOX SPARTAN</span><span id="pos"></span></div>
+    <div id="view"></div>
+    <div id="cap" aria-live="polite"></div>
+    <div class="nav">
+      <button type="button" id="prev">Geri</button>
+      <button type="button" id="next">Sıradaki</button>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  document.documentElement.lang = "tr";
+  var PI = Math.PI, D = PI / 180;
+
+  // Ölçüler mm. Eksenler: x sap boyunca (91 mm), y yuva tarafı yukarı, z kalınlık. Ön kapak +z.
+  var PARTS = [
+    { id: "buyuk", name: "Büyük bıçak", view: { r: [.2, -.25, .6], f: [30, 0, 1], d: 275 },
+      line: "Asıl kesen bu. Kilidi yok, açıkken sırtına yük bindirme." },
+    { id: "kucuk", name: "Küçük bıçak", view: { r: [.25, .3, -.45], f: [-20, 2, 1], d: 225 },
+      line: "Koli bandı, etiket, kalem. Günlük işi bununla yaparsan büyüğü keskin kalır." },
+    { id: "konserve", name: "Konserve açacağı", fns: "+ 3 mm tornavida", view: { r: [.25, .45, -.3], f: [-46, 3, -1.5], d: 150 },
+      line: "Çentiği kutunun kenarına tak, ileri doğru ilerle. Ucu düz tornavida." },
+    { id: "sise", name: "Şişe açacağı", fns: "+ 6 mm tornavida + kablo sıyırıcı", view: { r: [.25, -.5, .3], f: [48, 3, -1.5], d: 150 },
+      line: "Geniş ucu büyük tornavida. Dibindeki küçük çentik kablo soyar." },
+    { id: "biz", name: "Biz", fns: "delgi + rayba + dikiş bizi", view: { r: [-.4, -.7, 0], f: [26, -14, -1.5], d: 175 },
+      line: "Bastırıp çevirince delik açar. Ortasındaki göz iğne deliği, ip geçer." },
+    { id: "tirbuson", name: "Tirbuşon", view: { r: [-.4, -.5, 0], f: [0, -13, 0], d: 200 },
+      line: "Dik açınca sap tutamak olur. Sıkışmış düğümü de gevşetir." },
+    { id: "cimbiz", name: "Cımbız", view: { r: [-.35, .9, 0], f: [-46, -6, 3], d: 125 },
+      line: "Sapın ucundaki gri başlığı tırnağınla çek." },
+    { id: "kurdan", name: "Kürdan", view: { r: [-.35, 2.25, 0], f: [-46, -6, -3], d: 125 },
+      line: "Öbür yüzdeki başlıktan çıkar. Yıkanır, tekrar kullanılır." },
+    { id: "halka", name: "Anahtar halkası", view: { r: [-.55, .7, 0], f: [-43, -14, -1.5], d: 135 },
+      line: "Anahtarlığa ya da bir ipe bağlamak için." }
+  ];
+  var HOME = { r: [.45, -.45, 0], f: [-3, -1, 0], d: 215 };
+  var ALL = { r: [.15, -.35, 0], f: [-3, 12, 0], d: 290 };
+  var byId = {};
+  PARTS.forEach(function (p) { byId[p.id] = p; });
+
+  var QUIZ = [
+    { q: "Parmağına kıymık battı.", a: "cimbiz", fact: "Sapın ucundaki gri başlıktan çekilir." },
+    { q: "Kemere yeni bir delik lazım.", a: "biz", fact: "Ucunu bastır, çevirerek ilerle." },
+    { q: "Küçük bir yıldız vida gevşemiş.", a: "konserve", fact: "Ucundaki 3 mm tornavida küçük yıldız vidaya da oturur." },
+    { q: "Bir kablonun ucu soyulacak.", a: "sise", fact: "Kabloyu dipteki çentiğe oturt, bastırıp çevir, yalıtımı çek." }
+  ];
+
+  var STEPS = [{ t: "intro" }];
+  PARTS.forEach(function (p) { STEPS.push({ t: "part", p: p }); });
+  STEPS.push({ t: "lock" });
+  QUIZ.forEach(function (z, i) { STEPS.push({ t: "quiz", z: z, n: i + 1 }); });
+  STEPS.push({ t: "end" });
+  var STORY_N = PARTS.length + 2;
+
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+  var state = { sel: null, all: false };
+  var step = 0, ans = {};
+
+  var gate = document.getElementById("gate");
+  var story = document.getElementById("story");
+  var view = document.getElementById("view");
+  var cap = document.getElementById("cap");
+  var segs = document.getElementById("segs");
+  var posEl = document.getElementById("pos");
+  var prevBtn = document.getElementById("prev");
+  var nextBtn = document.getElementById("next");
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  STEPS.forEach(function () { segs.appendChild(document.createElement("i")); });
+
+  /* ---------- 3B model ---------- */
+  var three = null;
+  function build3d() {
+    var T = window.THREE;
+    var renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputEncoding = T.sRGBEncoding;
+    renderer.toneMapping = T.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+    view.appendChild(renderer.domElement);
+
+    var scene = new T.Scene();
+    var camera = new T.PerspectiveCamera(30, 1, 10, 2000);
+    camera.position.set(0, 0, HOME.d);
+
+    // Yansımalar için çizilmiş basit bir stüdyo ortamı
+    var ec = document.createElement("canvas"); ec.width = 512; ec.height = 256;
+    var g = ec.getContext("2d");
+    var gr = g.createLinearGradient(0, 0, 0, 256);
+    gr.addColorStop(0, "#ffffff"); gr.addColorStop(.42, "#b4c0cf"); gr.addColorStop(.58, "#5c6878"); gr.addColorStop(1, "#141a24");
+    g.fillStyle = gr; g.fillRect(0, 0, 512, 256);
+    g.fillStyle = "#ffffff";
+    g.fillRect(40, 30, 90, 60); g.fillRect(230, 20, 60, 80); g.fillRect(380, 40, 80, 50);
+    g.fillStyle = "#0c1018"; g.fillRect(150, 100, 50, 30); g.fillRect(320, 105, 40, 30);
+    var et = new T.CanvasTexture(ec); et.mapping = T.EquirectangularReflectionMapping; et.encoding = T.sRGBEncoding;
+    var pm = new T.PMREMGenerator(renderer);
+    scene.environment = pm.fromEquirectangular(et).texture;
+    et.dispose(); pm.dispose();
+    var sun = new T.DirectionalLight(0xffffff, .6); sun.position.set(60, 120, 160); scene.add(sun);
+    scene.add(new T.HemisphereLight(0xffffff, 0x334055, .2));
+
+    var steel = new T.MeshStandardMaterial({ color: 0xe6eaee, metalness: 1, roughness: .24, envMapIntensity: 1.25 });
+    var liner = new T.MeshStandardMaterial({ color: 0xb4bcc6, metalness: .9, roughness: .5 });
+    var brass = new T.MeshStandardMaterial({ color: 0xc9b48a, metalness: 1, roughness: .35 });
+    var grey = new T.MeshStandardMaterial({ color: 0x8a94a0, metalness: 0, roughness: .6 });
+    var ivory = new T.MeshStandardMaterial({ color: 0xe9e2cf, metalness: 0, roughness: .55 });
+    var blue = new T.MeshPhysicalMaterial({ color: 0x062a9c, metalness: 0, roughness: .2, clearcoat: .5, clearcoatRoughness: .12, transparent: true, opacity: .88, envMapIntensity: .4 });
+
+    var pivot = new T.Group(), knife = new T.Group();
+    pivot.add(knife); scene.add(pivot);
+
+    // Yandan görünüş çizimindeki koordinatları (3.2 birim = 1 mm, y aşağı) mm'ye çevirir
+    function X(v) { return (v - 196) / 3.2; }
+    function Y(v) { return (288 - v) / 3.2; }
+    function shapeOf(d) {
+      var t = d.match(/[MLCZ]|-?\d+(?:\.\d+)?/g), s = new T.Shape(), i = 0, c;
+      while (i < t.length) {
+        c = t[i++];
+        if (c === "M") { s.moveTo(X(+t[i]), Y(+t[i + 1])); i += 2; }
+        else if (c === "L") { s.lineTo(X(+t[i]), Y(+t[i + 1])); i += 2; }
+        else if (c === "C") { s.bezierCurveTo(X(+t[i]), Y(+t[i + 1]), X(+t[i + 2]), Y(+t[i + 3]), X(+t[i + 4]), Y(+t[i + 5])); i += 6; }
+        else if (c === "Z") { s.closePath(); }
+      }
+      return s;
+    }
+    function rr(w, h, r) {
+      var s = new T.Shape(), x = -w / 2, y = -h / 2;
+      s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.absarc(x + w - r, y + r, r, -PI / 2, 0, false);
+      s.lineTo(x + w, y + h - r); s.absarc(x + w - r, y + h - r, r, 0, PI / 2, false);
+      s.lineTo(x + r, y + h); s.absarc(x + r, y + h - r, r, PI / 2, PI, false);
+      s.lineTo(x, y + r); s.absarc(x + r, y + r, r, PI, PI * 1.5, false);
+      return s;
+    }
+
+    var tools = {};
+    function reg(id, group, kind, open, fan) {
+      group.traverse(function (o) { o.userData.part = id; });
+      knife.add(group);
+      tools[id] = { g: group, kind: kind, open: open, fan: fan, cur: 0 };
+    }
+    function flat(id, shape, px, py, z0, thick, open, fan) {
+      var geo = new T.ExtrudeGeometry(shape, { depth: thick - .3, bevelEnabled: true, bevelThickness: .15, bevelSize: .15, bevelSegments: 2, curveSegments: 20 });
+      geo.translate(-px, -py, z0 + .15);
+      var grp = new T.Group(); grp.position.set(px, py, 0);
+      grp.add(new T.Mesh(geo, steel));
+      reg(id, grp, "rot", open, fan);
+    }
+    var Rx = X(314), Lx = X(78), Py = Y(278);
+
+    flat("buyuk", shapeOf("M320,259 L296,254 L170,254 C130,254 104,264 92,282 C118,296 150,299 180,299 L284,299 L290,292 L320,292 C342,292 342,259 320,259 Z"), Rx, Py, 1.5, 1.6, -PI, -80 * D);
+    flat("kucuk", shapeOf("M66,261 L98,254 L150,254 C178,254 194,263 203,275 C186,284 166,286 146,286 L106,286 L100,280 L66,280 C53,280 53,261 66,261 Z"), Lx, Py, .3, 1.1, PI, 75 * D);
+    flat("konserve", shapeOf("M66,262 L98,254 L178,254 L191,256 L191,263 L178,267 C170,269 167,276 171,283 L159,285 C153,277 146,273 136,273 L104,275 L100,281 L66,281 C53,281 53,262 66,262 Z"), Lx, Py, -2.7, 2.2, PI, 130 * D);
+    flat("sise", shapeOf("M320,259 L296,254 L208,254 L200,257 L200,273 L210,277 C212,289 227,292 233,283 L238,275 L274,275 L278,281 L282,275 L288,275 L292,291 L320,291 C341,291 341,259 320,259 Z"), Rx, Py, -2.7, 2.2, -PI, -125 * D);
+    var awl = shapeOf("M318,302 L300,302 L226,315 L224,319 L300,324 L318,324 C333,324 333,302 318,302 Z");
+    var eye = new T.Path(); eye.absellipse(X(264), Y(314), 1.5, .65, 0, PI * 2, false, 0); awl.holes.push(eye);
+    flat("biz", awl, X(310), Y(312), -2.9, 2.2, PI / 2, PI / 2);
+
+    // Tirbuşon: kapalıyken merkezden anahtar halkası ucuna doğru yatar
+    (function () {
+      function Helix() { var c = new T.Curve(); c.getPoint = helixPoint; return c; }
+      function helixPoint(t, target) {
+        var v = target || new T.Vector3(), r0 = 2.5;
+        if (t < .1) { var u = t / .1; return v.set(-4.5 * u, r0 * u * u, 0); }
+        var s = (t - .1) / .9, a = s * PI * 2 * 4.5, r = r0 * (1 - .3 * s);
+        return v.set(-4.5 - 21 * s, r * Math.cos(a), r * Math.sin(a));
+      }
+      var grp = new T.Group(); grp.position.set(1.25, -7.6, 0);
+      grp.add(new T.Mesh(new T.TubeGeometry(new Helix(), 220, .8, 10, false), steel));
+      var tang = new T.Mesh(new T.BoxGeometry(5, 3.2, 2.4), steel); tang.position.set(1, 0, 0); grp.add(tang);
+      var tipc = new T.Mesh(new T.ConeGeometry(.8, 2.4, 10), steel);
+      var end = new Helix().getPoint(1), prev = new Helix().getPoint(.995);
+      tipc.position.copy(end);
+      tipc.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), end.clone().sub(prev).normalize());
+      grp.add(tipc);
+      reg("tirbuson", grp, "rot", PI / 2, PI / 2);
+    })();
+
+    // Cımbız ön kapakta, kürdan arka kapakta. İkisi de anahtar halkası ucundan çekilir.
+    (function () {
+      var a = new T.Group();
+      var b1 = new T.Mesh(new T.BoxGeometry(28, 1.7, .3), steel); b1.position.set(-28.5, -7.5, 5.7); a.add(b1);
+      var b2 = new T.Mesh(new T.BoxGeometry(28, 1.7, .3), steel); b2.position.set(-28.5, -7.5, 5.1); a.add(b2);
+      var h1 = new T.Mesh(new T.BoxGeometry(3.6, 3.2, 1.8), grey); h1.position.set(-43.6, -7.5, 5.4); a.add(h1);
+      reg("cimbiz", a, "slide", -22, -22);
+      var b = new T.Group();
+      var pick = new T.Mesh(new T.CylinderGeometry(.12, .8, 28, 10), ivory);
+      pick.rotation.z = -PI / 2; pick.scale.z = .6; pick.position.set(-28.5, -7.5, -5.4); b.add(pick);
+      var h2 = new T.Mesh(new T.BoxGeometry(3.6, 3.2, 1.8), ivory); h2.position.set(-43.6, -7.5, -5.4); b.add(h2);
+      reg("kurdan", b, "slide", -22, 0); // toplu görünümde kapalı kalır, yoksa cımbızla aynı yere düşer
+    })();
+
+    (function () {
+      var grp = new T.Group(); grp.position.set(-41.3, -10.6, -1.6);
+      grp.add(new T.Mesh(new T.TorusGeometry(1.5, .45, 8, 20), steel));
+      var ring = new T.Mesh(new T.TorusGeometry(5.5, .5, 10, 40), steel);
+      ring.rotation.y = PI / 2; ring.position.set(0, -5.9, 0);
+      var swing = new T.Group(); swing.add(ring); grp.add(swing);
+      reg("halka", grp, "swing", .7, .7);
+      tools.halka.swing = swing;
+    })();
+
+    // Sap: üç ara plaka, iki şeffaf kapak, perçinler
+    var plate = new T.ExtrudeGeometry(rr(90.4, 23.4, 10.7), { depth: .5, bevelEnabled: false, curveSegments: 24 });
+    [3.1, -.25, -3.6].forEach(function (z) {
+      var m = new T.Mesh(plate, liner); m.position.z = z; m.userData.handle = true; knife.add(m);
+    });
+    var scaleGeo = new T.ExtrudeGeometry(rr(87.8, 20.8, 9.4), { depth: 1.9, bevelEnabled: true, bevelThickness: 1.3, bevelSize: 1.6, bevelSegments: 8, curveSegments: 28 });
+    var front = new T.Mesh(scaleGeo, blue); front.position.z = 4.3; front.userData.handle = true; front.renderOrder = 2; knife.add(front);
+    var back = new T.Mesh(scaleGeo, blue); back.rotation.x = PI; back.position.z = -4.3; back.userData.handle = true; back.renderOrder = 2; knife.add(back);
+    [[Lx, Py], [Rx, Py], [1.25, -7.6], [X(310), Y(312)]].forEach(function (p) {
+      var r = new T.Mesh(new T.CylinderGeometry(1.25, 1.25, 8.4, 16), brass);
+      r.rotation.x = PI / 2; r.position.set(p[0], p[1], 0); r.userData.handle = true; knife.add(r);
+    });
+
+    var fit = 1;
+    var q = new T.Quaternion(), qT = new T.Quaternion(), posT = new T.Vector3(), distT = HOME.d, e = new T.Euler();
+    function setView(v, instant) {
+      e.set(v.r[0], v.r[1], v.r[2], "XYZ"); qT.setFromEuler(e);
+      posT.set(-v.f[0], -v.f[1], -v.f[2]); distT = v.d;
+      if (instant) { q.copy(qT); knife.position.copy(posT); camera.position.z = distT * fit; }
+    }
+    setView(HOME, true);
+
+    function size() {
+      var w = view.clientWidth, h = view.clientHeight;
+      if (!w || !h) return;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h; camera.updateProjectionMatrix();
+      fit = Math.max(1, .92 / camera.aspect);
+    }
+    if (window.ResizeObserver) new ResizeObserver(size).observe(view);
+    window.addEventListener("resize", size);
+
+    var last = 0;
+    function frame(now) {
+      requestAnimationFrame(frame);
+      if (story.hidden || document.hidden) { last = now; return; }
+      if (!renderer.domElement.width || renderer.domElement.clientWidth !== view.clientWidth) size();
+      var dt = Math.min((now - last) / 1000, .05); last = now;
+      var k = reduce ? 1 : 1 - Math.exp(-dt * 5.5);
+      for (var id in tools) {
+        var t = tools[id], goal = state.sel === id ? t.open : (state.all ? t.fan : 0);
+        t.cur += (goal - t.cur) * k;
+        if (t.kind === "rot") t.g.rotation.z = t.cur;
+        else if (t.kind === "slide") t.g.position.x = t.cur;
+        else t.swing.rotation.x = t.cur;
+      }
+      q.slerp(qT, k); pivot.quaternion.copy(q);
+      knife.position.lerp(posT, k);
+      camera.position.z += (distT * fit - camera.position.z) * k;
+      renderer.render(scene, camera);
+    }
+    requestAnimationFrame(frame);
+    // Sürükleyince döner. Dokununca: soruda en yakın parçayı seçer, diğer ekranlarda ileri ya da geri gider.
+    var cv = renderer.domElement, drag = null, dq = new T.Quaternion(), box = new T.Box3(), c3 = new T.Vector3();
+    function nearest(px, py, w, h) {
+      var best = null, bd = 1e9;
+      for (var id in tools) {
+        box.setFromObject(tools[id].g); box.getCenter(c3).project(camera);
+        var dx = (c3.x * .5 + .5) * w - px, dy = (-c3.y * .5 + .5) * h - py, d = Math.sqrt(dx * dx + dy * dy);
+        if (d < bd) { bd = d; best = id; }
+      }
+      return bd < Math.max(56, w * .2) ? best : null;
+    }
+    cv.addEventListener("pointerdown", function (ev) {
+      drag = { x: ev.clientX, y: ev.clientY, moved: false, id: ev.pointerId };
+      try { cv.setPointerCapture(ev.pointerId); } catch (err) {}
+    });
+    cv.addEventListener("pointermove", function (ev) {
+      if (!drag || ev.pointerId !== drag.id) return;
+      var dx = ev.clientX - drag.x, dy = ev.clientY - drag.y;
+      if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 8) return;
+      drag.moved = true; drag.x = ev.clientX; drag.y = ev.clientY;
+      e.set(ev.pointerType === "touch" ? 0 : dy * .008, dx * .008, 0, "XYZ"); dq.setFromEuler(e);
+      q.premultiply(dq); qT.copy(q);
+    });
+    function up(ev) {
+      if (!drag) return;
+      var was = drag; drag = null;
+      if (was.moved || ev.type === "pointercancel") return;
+      var b = cv.getBoundingClientRect(), px = ev.clientX - b.left, py = ev.clientY - b.top;
+      onTap(px / b.width, function () { return nearest(px, py, b.width, b.height); });
+    }
+    cv.addEventListener("pointerup", up);
+    cv.addEventListener("pointercancel", up);
+
+    return { setView: setView };
+  }
+
+  try { if (window.THREE) three = build3d(); } catch (err) { three = null; if (window.console) console.error(err); }
+  if (!three) view.innerHTML = '<p class="fail">3B görünüm bu tarayıcıda açılamadı. Yazılar yine de sırayla ilerler.</p>';
+
+  /* ---------- Akış ---------- */
+  var SUFFIX = ["ı", "i", "si", "ü", "ü"];
+  function score() {
+    var n = 0;
+    STEPS.forEach(function (s, i) { if (s.t === "quiz" && ans[i] === s.z.a) n++; });
+    return n;
+  }
+  function html(kick, title, text, ok) {
+    return '<div class="mono' + (ok ? ' ok' : '') + '">' + (kick || '') + '</div><h2>' + title + '</h2><p>' + text + '</p>';
+  }
+  function show() {
+    var s = STEPS[step], v = HOME, waiting = false;
+    state.sel = null; state.all = false;
+    if (s.t === "intro") {
+      cap.innerHTML = html("91 mm / 59 g / 12 fonksiyon", "Spartan", "Sıradaki parça için ekranın sağına dokun. Çakıyı parmağınla sürükleyip çevirebilirsin.");
+    } else if (s.t === "part") {
+      state.sel = s.p.id; v = s.p.view;
+      cap.innerHTML = html(s.p.fns, s.p.name, s.p.line);
+    } else if (s.t === "lock") {
+      state.all = true; v = ALL;
+      cap.innerHTML = html("", "Hiçbiri kilitlenmez", "Parçalar yay gücüyle açık durur. Kapatırken parmağın yuvanın önünde olmasın.");
+    } else if (s.t === "quiz") {
+      var got = ans[step];
+      if (!got) {
+        state.all = true; v = ALL; waiting = !!three;
+        cap.innerHTML = html("Hangisiyle?", s.z.q, three ? "Çakıda doğru parçaya dokun." : "");
+        if (!three) ans[step] = "-";
+      } else {
+        var right = byId[s.z.a];
+        state.sel = right.id; v = right.view;
+        cap.innerHTML = html(got === right.id ? "Doğru" : (byId[got] ? "Seçtiğin: " + byId[got].name : ""), right.name, s.z.fact, got === right.id);
+      }
+    } else {
+      var n = score();
+      cap.innerHTML = html("", QUIZ.length + " sorunun " + n + "'" + SUFFIX[n], "Bakımı: ılık suda parçaları açıp kapat, kurut, menteşeye bir damla yağ. Bulaşık makinesine girmez. Uçakta valize koy.");
+    }
+    if (three) three.setView(v, reduce);
+    var kids = segs.children;
+    for (var i = 0; i < kids.length; i++) kids[i].className = i <= step ? "on" : "";
+    posEl.textContent = s.t === "quiz" ? "Soru " + s.n + " / " + QUIZ.length : (s.t === "end" ? "" : (step + 1) + " / " + STORY_N);
+    prevBtn.disabled = step === 0;
+    nextBtn.className = waiting ? "wait" : "";
+    nextBtn.disabled = waiting;
+    nextBtn.textContent = waiting ? "Sürükleyince çakı döner" : (s.t === "end" ? "Baştan izle" : (s.t === "lock" ? "Hangisiyle?" : "Sıradaki"));
+    store.set("at2", String(step));
+  }
+  function go(d) {
+    var s = STEPS[step];
+    if (d > 0 && s.t === "quiz" && !ans[step]) return;
+    if (d > 0 && s.t === "end") { step = 0; ans = {}; show(); return; }
+    var n = step + d;
+    if (n < 0 || n >= STEPS.length) return;
+    step = n; show();
+  }
+  function onTap(fx, pick) {
+    var s = STEPS[step];
+    if (s.t === "quiz" && !ans[step]) {
+      var id = pick();
+      if (id) { ans[step] = id; show(); }
+      return;
+    }
+    if (s.t === "end") return;
+    go(fx < .3 ? -1 : 1);
+  }
+  prevBtn.addEventListener("click", function () { go(-1); });
+  nextBtn.addEventListener("click", function () { go(1); });
+  document.addEventListener("keydown", function (ev) {
+    if (story.hidden) return;
+    if (ev.key === "ArrowRight") go(1);
+    else if (ev.key === "ArrowLeft") go(-1);
+  });
+
+  function openStory() { gate.hidden = true; story.hidden = false; show(); }
+  // Kutuyu açtım düğmesi dokunmayla geçmez, iki saniye basılı tutulunca geçer.
+  var gateGo = document.getElementById("gate-go"), gateMsg = document.getElementById("gate-msg");
+  var HOLD_MS = 2000, holdTimer = null;
+  function holdStart() {
+    if (holdTimer) return;
+    gateGo.classList.add("hold");
+    holdTimer = setTimeout(function () {
+      holdTimer = null; gateGo.classList.remove("hold");
+      store.set("kutu2", "1");
+      openStory();
+    }, HOLD_MS);
+  }
+  function holdEnd() {
+    if (!holdTimer) return;
+    clearTimeout(holdTimer); holdTimer = null;
+    gateGo.classList.remove("hold");
+    gateMsg.textContent = "Bırakma, dolana kadar basılı tut.";
+  }
+  gateGo.addEventListener("pointerdown", function (ev) {
+    try { gateGo.setPointerCapture(ev.pointerId); } catch (err) {}
+    holdStart();
+  });
+  ["pointerup", "pointercancel", "blur"].forEach(function (n) { gateGo.addEventListener(n, holdEnd); });
+  gateGo.addEventListener("contextmenu", function (ev) { ev.preventDefault(); });
+  gateGo.addEventListener("keydown", function (ev) { if ((ev.key === " " || ev.key === "Enter") && !ev.repeat) { ev.preventDefault(); holdStart(); } });
+  gateGo.addEventListener("keyup", function (ev) { if (ev.key === " " || ev.key === "Enter") holdEnd(); });
+
+  if (store.get("kutu2") === "1") {
+    var at = parseInt(store.get("at2") || "0", 10);
+    step = at > 0 && at <= STORY_N - 1 ? at : 0;
+    openStory();
+  }
+})();
+</script>
+</body>
+</html>
